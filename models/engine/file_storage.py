@@ -22,8 +22,15 @@ class FileStorage:
     # dictionary - empty but will store all objects by <class name>.id
     __objects = {}
 
-    def all(self):
-        """Returns the dictionary __objects"""
+    def all(self, cls=None):
+        """Returns the dictionary __objects or filtered by class"""
+        if cls is not None:
+            # Filter objects by class type
+            filtered_objects = {}
+            for key, obj in FileStorage.__objects.items():
+                if isinstance(obj, cls):
+                    filtered_objects[key] = obj
+            return filtered_objects
         return FileStorage.__objects
 
     def new(self, obj):
