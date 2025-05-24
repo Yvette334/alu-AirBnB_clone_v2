@@ -61,8 +61,25 @@ class HBNBCommand(cmd.Cmd):
         try:
             args = shlex.split(arg)
         except ValueError:
-            # If shlex fails, fall back to simple split
-            args = arg.split()
+            # If shlex fails, fall back to simple split but handle quotes manually
+            args = []
+            current_arg = ""
+            in_quotes = False
+            i = 0
+            while i < len(arg):
+                char = arg[i]
+                if char == '"' and (i == 0 or arg[i-1] != '\\'):
+                    in_quotes = not in_quotes
+                    current_arg += char
+                elif char == ' ' and not in_quotes:
+                    if current_arg:
+                        args.append(current_arg)
+                        current_arg = ""
+                else:
+                    current_arg += char
+                i += 1
+            if current_arg:
+                args.append(current_arg)
 
         if not args:
             print("** class name missing **")
@@ -99,14 +116,14 @@ class HBNBCommand(cmd.Cmd):
                     
                     # Set attribute on the instance
                     setattr(new_instance, key, parsed_value)
-                    
-                except ValueError:
-                    # Skip parameters that can't be split properly
-                    continue
-        
-        # Save the instance
-        new_instance.save()
-        print(new_instance.id)
+                
+            except ValueError:
+                # Skip parameters that can't be split properly
+                continue
+    
+    # Save the instance
+    new_instance.save()
+    print(new_instance.id)
 
     def _parse_parameter_value(self, value):
         """Parse parameter value and return appropriate Python type
@@ -134,7 +151,7 @@ class HBNBCommand(cmd.Cmd):
             except ValueError:
                 return None
         
-        # Integer value (numeric)
+        # Integer value (numeric, including negative)
         else:
             try:
                 return int(value)
