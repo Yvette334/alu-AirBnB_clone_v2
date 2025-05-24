@@ -56,12 +56,27 @@ class HBNBCommand(cmd.Cmd):
             print("** class name missing **")
             return
 
-        # Split arguments while preserving quoted strings
-        try:
-            args = shlex.split(arg)
-        except ValueError:
-            # If shlex fails, fall back to simple split
-            args = arg.split()
+        # Parse arguments manually to handle quoted strings properly
+        args = []
+        current_arg = ""
+        in_quotes = False
+        i = 0
+        
+        while i < len(arg):
+            char = arg[i]
+            if char == '"' and (i == 0 or arg[i-1] != '\\'):
+                in_quotes = not in_quotes
+                current_arg += char
+            elif char == ' ' and not in_quotes:
+                if current_arg:
+                    args.append(current_arg)
+                    current_arg = ""
+            else:
+                current_arg += char
+            i += 1
+        
+        if current_arg:
+            args.append(current_arg)
 
         if not args:
             print("** class name missing **")
@@ -77,31 +92,26 @@ class HBNBCommand(cmd.Cmd):
         new_instance = self.classes[class_name]()
         
         # Process parameters if any
-        if len(args) > 1:
-            for param in args[1:]:
-                if '=' not in param:
-                    continue  # Skip invalid parameters
-                
-                try:
-                    key, value = param.split('=', 1)
-                    
-                    # Skip if key is empty
-                    if not key:
-                        continue
-                    
-                    # Parse value based on type
-                    parsed_value = self._parse_parameter_value(value)
-                    
-                    # Skip if parsing failed
-                    if parsed_value is None:
-                        continue
-                    
-                    # Set attribute on the instance
-                    setattr(new_instance, key, parsed_value)
-                    
-                except ValueError:
-                    # Skip parameters that can't be split properly
-                    continue
+        for param in args[1:]:
+            if '=' not in param:
+                continue  # Skip invalid parameters
+            
+            # Split on first = only
+            key, value = param.split('=', 1)
+            
+            # Skip if key is empty
+            if not key:
+                continue
+            
+            # Parse value based on type
+            parsed_value = self._parse_parameter_value(value)
+            
+            # Skip if parsing failed
+            if parsed_value is None:
+                continue
+            
+            # Set attribute on the instance
+            setattr(new_instance, key, parsed_value)
         
         # Save the instance
         new_instance.save()
