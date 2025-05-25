@@ -9,15 +9,16 @@ import models
 place_amenity = Table(
     'place_amenity',
     Base.metadata,
-    Column('place_id', String(60), ForeignKey('places.id'), primary_key=True, nullable=False),
-    Column('amenity_id', String(60), ForeignKey('amenities.id'), primary_key=True, nullable=False)
+    Column('place_id', String(60),
+           ForeignKey('places.id'), primary_key=True, nullable=False),
+    Column('amenity_id', String(60),
+           ForeignKey('amenities.id'), primary_key=True, nullable=False)
 )
 
 
 class Place(BaseModel, Base):
     """ A place to stay """
     __tablename__ = 'places'
-    
     city_id = Column(String(60), ForeignKey('cities.id'), nullable=False)
     user_id = Column(String(60), ForeignKey('users.id'), nullable=False)
     name = Column(String(128), nullable=False)
@@ -28,17 +29,14 @@ class Place(BaseModel, Base):
     price_by_night = Column(Integer, nullable=False, default=0)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
-    
-    # For DBStorage: Many-to-Many relationship with Amenity
-    amenities = relationship("Amenity", secondary=place_amenity, viewonly=False)
-    
-    # For FileStorage
+    amenities = relationship("Amenity", secondary=place_amenity,
+                            viewonly=False)
     amenity_ids = []
-    
+
     def __init__(self, *args, **kwargs):
         """Initializes Place"""
         super().__init__(*args, **kwargs)
-    
+
     if models.storage_t != "db":
         @property
         def amenities(self):
@@ -50,10 +48,10 @@ class Place(BaseModel, Base):
                 if amenity.id in self.amenity_ids:
                     amenity_list.append(amenity)
             return amenity_list
-        
+
         @amenities.setter
         def amenities(self, obj):
-            """Setter for amenities that handles append method for adding Amenity.id"""
+            """Setter for amenities that handles append method"""
             from models.amenity import Amenity
             if isinstance(obj, Amenity):
                 if obj.id not in self.amenity_ids:
