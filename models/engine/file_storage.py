@@ -1,7 +1,6 @@
 #!/usr/bin/python3
 """This module defines a class to manage file storage for hbnb clone"""
 import json
-import shlex
 
 
 class FileStorage:
@@ -11,17 +10,16 @@ class FileStorage:
 
     def all(self, cls=None):
         """Returns a dictionary of models currently in storage"""
-        obj_dic = {}
-        if cls:
-            dic = self.__objects
-            for key in dic:
-                obj_key = key.replace('.', ' ')
-                obj_key = shlex.split(obj_key)
-                if (obj_key[0] == cls.__name__):
-                    obj_dic[key] = self.__objects[key]
-            return (obj_dic)
-        else:
-            return self.__objects
+        obj_dict = FileStorage.__objects
+        if cls is not None:
+            cls_dic = {}
+            for key, obj in obj_dict.items():
+                if type(cls) is str:
+                    cls = eval(cls)
+                if (type(obj) is cls):
+                    cls_dic[key] = obj
+            return cls_dic
+        return obj_dict
 
     def new(self, obj):
         """Adds new object to storage dictionary"""
@@ -61,13 +59,14 @@ class FileStorage:
             pass
 
     def delete(self, obj=None):
-        """ delete an existing element
-        """
-        if obj:
-            key = "{}.{}".format(type(obj).__name__, obj.id)
-            del self.__objects[key]
+        """ Deletes obj from __objects """
+        if obj is not None:
+            obj_dic = FileStorage.__objects
+            for key in obj_dic:
+                if (obj_dic[key] == obj):
+                    del obj_dic[key]
+                    break
 
     def close(self):
-        """ calls reload()
-        """
+        """Calls the reload method of FileStorage"""
         self.reload()
