@@ -30,7 +30,7 @@ class Place(BaseModel, Base):
     longitude = Column(Float, nullable=True)
     
     # For DBStorage: Many-to-Many relationship with Amenity
-    amenities = relationship("Amenity", secondary=place_amenity, viewonly=False, back_populates="place_amenities")
+    amenities = relationship("Amenity", secondary=place_amenity, viewonly=False)
     
     # For FileStorage
     amenity_ids = []
