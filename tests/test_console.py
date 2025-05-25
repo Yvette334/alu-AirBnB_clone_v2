@@ -31,8 +31,6 @@ class TestConsole(unittest.TestCase):
         with patch('sys.stdout', new=StringIO()) as f:
             self.console.onecmd("create State")
             state_id = f.getvalue().strip()
-        
-        # Verify state was created and ID was returned
         self.assertTrue(state_id)
         key = f"State.{state_id}"
         self.assertIn(key, storage.all())
@@ -42,8 +40,6 @@ class TestConsole(unittest.TestCase):
         with patch('sys.stdout', new=StringIO()) as f:
             self.console.onecmd('create State name="California"')
             state_id = f.getvalue().strip()
-        
-        # Verify state was created with correct name
         key = f"State.{state_id}"
         self.assertIn(key, storage.all())
         state = storage.all()[key]
@@ -51,32 +47,24 @@ class TestConsole(unittest.TestCase):
 
     def test_show_state(self):
         """Test show State command"""
-        # First create a state
         with patch('sys.stdout', new=StringIO()) as f:
             self.console.onecmd("create State")
             state_id = f.getvalue().strip()
-        
-        # Then show it
         with patch('sys.stdout', new=StringIO()) as f:
             self.console.onecmd(f"show State {state_id}")
             output = f.getvalue().strip()
-        
         self.assertIn(state_id, output)
         self.assertIn("State", output)
 
     def test_create_city_with_state_id(self):
         """Test create City with state_id parameter"""
-        # First create a state
         with patch('sys.stdout', new=StringIO()) as f:
             self.console.onecmd('create State name="California"')
             state_id = f.getvalue().strip()
-        
-        # Then create a city with that state_id
         with patch('sys.stdout', new=StringIO()) as f:
-            self.console.onecmd(f'create City state_id="{state_id}" name="Fremont"')
+            cmd = f'create City state_id="{state_id}" name="Fremont"'
+            self.console.onecmd(cmd)
             city_id = f.getvalue().strip()
-        
-        # Verify city was created correctly
         key = f"City.{city_id}"
         self.assertIn(key, storage.all())
         city = storage.all()[key]
@@ -85,37 +73,31 @@ class TestConsole(unittest.TestCase):
 
     def test_create_place_with_multiple_params(self):
         """Test create Place with multiple parameters"""
-        # Create dependencies first
         with patch('sys.stdout', new=StringIO()) as f:
             self.console.onecmd('create State name="California"')
             state_id = f.getvalue().strip()
-        
         with patch('sys.stdout', new=StringIO()) as f:
-            self.console.onecmd(f'create City state_id="{state_id}" name="San Francisco"')
+            cmd = f'create City state_id="{state_id}" name="San Francisco"'
+            self.console.onecmd(cmd)
             city_id = f.getvalue().strip()
-        
         with patch('sys.stdout', new=StringIO()) as f:
-            self.console.onecmd('create User email="test@test.com" password="pwd" first_name="John" last_name="Doe"')
+            cmd = ('create User email="test@test.com" password="pwd" '
+                   'first_name="John" last_name="Doe"')
+            self.console.onecmd(cmd)
             user_id = f.getvalue().strip()
-        
-        # Create place with multiple parameters
         cmd = (f'create Place city_id="{city_id}" user_id="{user_id}" '
                'name="My_house" description="Beautiful_house" '
                'number_rooms=4 number_bathrooms=2 max_guest=8 '
                'price_by_night=120 latitude=37.7749 longitude=-122.4194')
-        
         with patch('sys.stdout', new=StringIO()) as f:
             self.console.onecmd(cmd)
             place_id = f.getvalue().strip()
-        
-        # Verify place was created correctly
         key = f"Place.{place_id}"
         self.assertIn(key, storage.all())
         place = storage.all()[key]
-        
         self.assertEqual(place.city_id, city_id)
         self.assertEqual(place.user_id, user_id)
-        self.assertEqual(place.name, "My house")  # Underscores replaced
+        self.assertEqual(place.name, "My house")
         self.assertEqual(place.description, "Beautiful house")
         self.assertEqual(place.number_rooms, 4)
         self.assertEqual(place.number_bathrooms, 2)
@@ -128,14 +110,11 @@ class TestConsole(unittest.TestCase):
         """Test handling of negative values"""
         cmd = ('create Place number_bathrooms=0 max_guest=-3 '
                'latitude=-120.12 longitude=0.41921928')
-        
         with patch('sys.stdout', new=StringIO()) as f:
             self.console.onecmd(cmd)
             place_id = f.getvalue().strip()
-        
         key = f"Place.{place_id}"
         place = storage.all()[key]
-        
         self.assertEqual(place.number_bathrooms, 0)
         self.assertEqual(place.max_guest, -3)
         self.assertEqual(place.latitude, -120.12)
