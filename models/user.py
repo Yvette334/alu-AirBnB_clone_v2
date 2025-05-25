@@ -1,14 +1,17 @@
 #!/usr/bin/python3
-"""
-Contains the User class
-"""
+"""Contains the User class"""
+from models.base_model import BaseModel, Base
+from sqlalchemy import Column, String
+from sqlalchemy.orm import relationship
 
-from models.base_model import BaseModel
 
+class User(BaseModel, Base):
+    """This class defines a user by various attributes"""
+    __tablename__ = 'users'
 
-class User(BaseModel):
-    """Representation of a user"""
-    email = ""
-    password = ""
-    first_name = ""
-    last_name = ""
+    email = Column(String(128), nullable=False)
+    password = Column(String(128), nullable=False)
+    first_name = Column(String(128))
+    last_name = Column(String(128))
+    places = relationship("Place", backref="user", cascade="delete")
+    reviews = relationship("Review", backref="user", cascade="delete")
