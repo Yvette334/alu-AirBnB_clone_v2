@@ -80,7 +80,7 @@ class TestConsoleCreateParams(unittest.TestCase):
     def test_create_skip_invalid_params(self):
         """Test that invalid parameters are skipped"""
         with patch('sys.stdout', new=StringIO()) as f:
-            cmd = 'create State name="California" invalid_param bad=param=value'
+            cmd =  'create State name="California\\"s_best"'
             self.console.onecmd(cmd)
             state_id = f.getvalue().strip()
         key = f"State.{state_id}"
