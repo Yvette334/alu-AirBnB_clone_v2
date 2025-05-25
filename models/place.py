@@ -31,9 +31,9 @@ class Place(BaseModel, Base):
     amenity_ids = []
 
     # For DBStorage: relationship with Amenity using place_amenity as secondary table
-    if os.getenv('HBNB_TYPE_STORAGE') == 'db':
-        amenities = relationship("Amenity", secondary=place_amenity, viewonly=False, back_populates="place_amenities")
-    else:
+    amenities = relationship("Amenity", secondary=place_amenity, viewonly=False)
+
+    if os.getenv('HBNB_TYPE_STORAGE') != 'db':
         # For FileStorage: getter and setter for amenities
         @property
         def amenities(self):
