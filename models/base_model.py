@@ -6,10 +6,18 @@ Contains the BaseModel class
 import models
 from uuid import uuid4
 from datetime import datetime
+from sqlalchemy import Column, String, DateTime
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
 
 
 class BaseModel:
     """The BaseModel class from which future classes will be derived"""
+    
+    id = Column(String(60), primary_key=True, nullable=False)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow)
 
     def __init__(self, *args, **kwargs):
         """Initialization of the base model"""
@@ -22,9 +30,8 @@ class BaseModel:
                         setattr(self, key, value)
         else:
             self.id = str(uuid4())
-            self.created_at = datetime.now()
+            self.created_at = datetime.utcnow()
             self.updated_at = self.created_at
-            models.storage.new(self)
 
     def __str__(self):
         """String representation of the BaseModel class"""
@@ -33,7 +40,8 @@ class BaseModel:
 
     def save(self):
         """Updates the attribute 'updated_at' with the current datetime"""
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.utcnow()
+        models.storage.new(self)
         models.storage.save()
 
     def to_dict(self):
@@ -44,4 +52,10 @@ class BaseModel:
         if "updated_at" in new_dict:
             new_dict["updated_at"] = new_dict["updated_at"].strftime("%Y-%m-%dT%H:%M:%S.%f")
         new_dict["__class__"] = self.__class__.__name__
+        if "_sa_instance_state" in new_dict:
+            del new_dict["_sa_instance_state"]
         return new_dict
+
+    def delete(self):
+        """Delete the current instance from the storage"""
+        models.storage.delete(self)
