@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """This module defines a class to manage file storage for hbnb clone"""
 import json
+import shlex
 
 
 class FileStorage:
@@ -10,15 +11,17 @@ class FileStorage:
 
     def all(self, cls=None):
         """Returns a dictionary of models currently in storage"""
-        if cls is None:
-            return FileStorage.__objects
+        obj_dic = {}
+        if cls:
+            dic = self.__objects
+            for key in dic:
+                obj_key = key.replace('.', ' ')
+                obj_key = shlex.split(obj_key)
+                if (obj_key[0] == cls.__name__):
+                    obj_dic[key] = self.__objects[key]
+            return (obj_dic)
         else:
-            # Filter objects by class type
-            filtered_objects = {}
-            for key, obj in FileStorage.__objects.items():
-                if isinstance(obj, cls):
-                    filtered_objects[key] = obj
-            return filtered_objects
+            return self.__objects
 
     def new(self, obj):
         """Adds new object to storage dictionary"""
@@ -44,10 +47,10 @@ class FileStorage:
         from models.review import Review
 
         classes = {
-                    'BaseModel': BaseModel, 'User': User, 'Place': Place,
-                    'State': State, 'City': City, 'Amenity': Amenity,
-                    'Review': Review
-                  }
+            'BaseModel': BaseModel, 'User': User, 'Place': Place,
+            'State': State, 'City': City, 'Amenity': Amenity,
+            'Review': Review
+        }
         try:
             temp = {}
             with open(FileStorage.__file_path, 'r') as f:
@@ -58,10 +61,13 @@ class FileStorage:
             pass
 
     def delete(self, obj=None):
-        """Delete obj from __objects if it's inside"""
-        if obj is None:
-            return
-        
-        key = obj.__class__.__name__ + '.' + obj.id
-        if key in FileStorage.__objects:
-            del FileStorage.__objects[key]
+        """ delete an existing element
+        """
+        if obj:
+            key = "{}.{}".format(type(obj).__name__, obj.id)
+            del self.__objects[key]
+
+    def close(self):
+        """ calls reload()
+        """
+        self.reload()
