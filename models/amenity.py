@@ -12,10 +12,7 @@ class Amenity(BaseModel, Base):
     name = Column(String(128), nullable=False)
     
     # For DBStorage: Many-to-Many relationship with Place
-    if models.storage_t == "db":
-        place_amenities = relationship("Place", secondary="place_amenity", back_populates="amenities")
-    else:
-        place_amenities = []
+    place_amenities = relationship("Place", secondary="place_amenity")
     
     def __init__(self, *args, **kwargs):
         """Initializes Amenity"""
