@@ -119,43 +119,63 @@ class HBNBCommand(cmd.Cmd):
 
     def do_create(self, args):
         """ Create an object of any class"""
-        if len(args) < 1:
+        if not args:
             print("** class name missing **")
             return
-        # convert the args to a list
-        args = args.split()
-
-        # the 1st element of the list is the class name
-        class_name = args[0]
-
+        
+        # Split arguments
+        arg_list = args.split()
+        class_name = arg_list[0]
+        
         if class_name not in self.classes:
             print("** class doesn't exist **")
             return
+        
+        # Create new instance
         new_instance = self.classes[class_name]()
-        for params in args[1:]:
-            if "=" not in params:
-                continue
-            key, value = params.split('=')
-            value = value.replace('_', ' ')
-            if value.startswith('"') and value.endswith('"'):
-                value = value[1:-1].replace('\\"', '"')
-            elif '.' in value:
-                try:
-                    value = float(value)
-                except ValueError:
-                    continue
-            else:
-                try:
-                    value = int(value)
-                except ValueError:
-                    continue
-
-            if value is not None and value != "" and hasattr(
-                    new_instance, key):
-                setattr(new_instance, key, value)
-
+        
+        # Process parameters if any
+        for param in arg_list[1:]:
+            if '=' not in param:
+                continue  # Skip invalid parameters
+            
+            try:
+                key, value = param.split('=', 1)
+                
+                # Process string values (must start and end with quotes)
+                if value.startswith('"') and value.endswith('"'):
+                    # Remove surrounding quotes
+                    value = value[1:-1]
+                    # Replace escaped quotes
+                    value = value.replace('\\"', '"')
+                    # Replace underscores with spaces
+                    value = value.replace('_', ' ')
+                
+                # Process float values (contains a dot)
+                elif '.' in value:
+                    try:
+                        value = float(value)
+                    except ValueError:
+                        continue  # Skip if can't convert to float
+                
+                # Process integer values (default case)
+                else:
+                    try:
+                        value = int(value)
+                    except ValueError:
+                        continue  # Skip if can't convert to int
+                
+                # Set attribute if it exists in the class
+                if hasattr(new_instance, key):
+                    setattr(new_instance, key, value)
+            
+            except ValueError:
+                continue  # Skip malformed parameters
+        
+        # Save and print ID
+        models.storage.new(new_instance)
+        models.storage.save()
         print(new_instance.id)
-        new_instance.save()
 
     def help_create(self):
         """ Help information for the create method """
@@ -254,7 +274,7 @@ class HBNBCommand(cmd.Cmd):
     def do_count(self, args):
         """Count current number of class instances"""
         count = 0
-        for k, v in models.storage._FileStorage__objects.items():
+        for k, v in models.storage.all().items():
             if args == k.split('.')[0]:
                 count += 1
         print(count)
@@ -354,4 +374,3 @@ class HBNBCommand(cmd.Cmd):
 
 if __name__ == "__main__":
     HBNBCommand().cmdloop()
-    
