@@ -6,7 +6,7 @@ Contains the Place class
 from models.base_model import BaseModel, Base
 from sqlalchemy import Column, String, Integer, Float, ForeignKey, Table
 from sqlalchemy.orm import relationship
-import models
+import os
 
 # Association table for Many-to-Many relationship between Place and Amenity
 place_amenity = Table('place_amenity', Base.metadata,
@@ -31,23 +31,24 @@ class Place(BaseModel, Base):
     amenity_ids = []
 
     # For DBStorage: relationship with Amenity using place_amenity as secondary table
-    amenities = relationship("Amenity", secondary=place_amenity, viewonly=False)
-
-    # For FileStorage: getter and setter for amenities
-    @property
-    def amenities(self):
-        """Getter for amenities in FileStorage"""
-        if models.storage_t != "db":
+    if os.getenv('HBNB_TYPE_STORAGE') == 'db':
+        amenities = relationship("Amenity", secondary=place_amenity, viewonly=False, back_populates="place_amenities")
+    else:
+        # For FileStorage: getter and setter for amenities
+        @property
+        def amenities(self):
+            """Getter for amenities in FileStorage"""
+            from models import storage
             amenity_list = []
-            all_amenities = models.storage.all("Amenity")
+            all_amenities = storage.all("Amenity")
             for amenity in all_amenities.values():
                 if amenity.id in self.amenity_ids:
                     amenity_list.append(amenity)
             return amenity_list
-        
-    @amenities.setter
-    def amenities(self, obj):
-        """Setter for amenities in FileStorage"""
-        if models.storage_t != "db":
+
+        @amenities.setter
+        def amenities(self, obj):
+            """Setter for amenities in FileStorage"""
             if obj.__class__.__name__ == "Amenity":
-                self.amenity_ids.append(obj.id)
+                if obj.id not in self.amenity_ids:
+                    self.amenity_ids.append(obj.id)
