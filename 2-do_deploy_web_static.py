@@ -7,8 +7,8 @@ from fabric.api import *
 from os.path import exists
 import os
 
-env.hosts = ['<IP web-01>', '<IP web-02>']  # Replace with actual IPs
-env.user = 'ubuntu'  # Replace with your username if different
+env.hosts = ['54.175.105.22', '54.175.110.39']
+env.user = 'ubuntu' 
 
 
 def do_deploy(archive_path):
