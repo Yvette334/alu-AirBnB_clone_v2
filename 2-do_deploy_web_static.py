@@ -34,7 +34,13 @@ def do_deploy(archive_path):
         run("rm -rf {}web_static".format(releases_path))
         run("rm -rf /data/web_static/current")
         run("ln -s {} /data/web_static/current".format(releases_path))
+        
+        # Additional step to ensure hbnb_static is properly linked
+        run("mkdir -p /data/web_static/current/hbnb_static")
+        run("ln -sf {}* /data/web_static/current/hbnb_static/".format(releases_path))
+        
         print("New version deployed!")
         return True
-    except:
+    except Exception as e:
+        print("Error during deployment:", str(e))
         return False
