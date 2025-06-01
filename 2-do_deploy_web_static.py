@@ -1,73 +1,47 @@
 #!/usr/bin/python3
-"""
-Fabric script to deploy web_static and configure Nginx
-"""
+"""  a Fabric script that generates a .tgz archive from the
+content of the web_static"""
+import os.path
+from fabric.api import run
+from fabric.api import put
+from fabric.api import env
 
-from fabric.api import *
-from os.path import exists
-import os
 
-env.hosts = ["54.175.105.22", "54.175.110.39"]
-env.user = "ubuntu"
+env.user = 'ubuntu'
+env.hosts = ['54.162.232.135', '18.234.249.5']
 
 
 def do_deploy(archive_path):
-    """
-    Deploys an archive to the web servers
-    """
-    if not exists(archive_path):
+    """ distributes an archive to your web servers"""
+    if os.path.isfile(archive_path) is False:
+        return False
+    file = archive_path.split("/")[-1]
+    name = file.split(".")[0]
+
+    if put(archive_path, "/tmp/{}".format(file)).failed is True:
+        return False
+    if run("rm -rf /data/web_static/releases/{}/".format(name)).failed is True:
+        return False
+    if run("mkdir -p /data/web_static/releases/{}".
+            format(name)).failed is True:
         return False
 
-    try:
-        filename = os.path.basename(archive_path)
-        name_no_ext = filename.split('.')[0]
-        release_dir = f"/data/web_static/releases/{name_no_ext}"
-        tmp_path = f"/tmp/{filename}"
-
-        # Upload the archive to /tmp/
-        put(archive_path, tmp_path)
-
-        # Create release folder and extract
-        run(f"mkdir -p {release_dir}")
-        run(f"tar -xzf {tmp_path} -C {release_dir}")
-        run(f"rm {tmp_path}")
-
-        # Move contents from web_static/* to release_dir
-        run(f"mv {release_dir}/web_static/* {release_dir}/")
-        run(f"rm -rf {release_dir}/web_static")
-
-        # Remove old symlink and create new one
-        run("rm -rf /data/web_static/current")
-        run(f"ln -s {release_dir} /data/web_static/current")
-
-        # Configure Nginx if needed
-        configure_nginx()
-
-        print("New version deployed!")
-        return True
-
-    except Exception as e:
-        print(f"Deployment failed: {e}")
+    if run("tar -xzf /tmp/{} -C /data/web_static/releases/{}".
+            format(file, name)).failed is True:
+        return False
+    if run("rm /tmp/{}".format(file)).failed is True:
         return False
 
+    if run("mv /data/web_static/releases/{}/web_static/* "
+            "/data/web_static/releases/{}/".format(name, name)).failed is True:
+        return False
+    if run("rm -rf /data/web_static/releases/{}/web_static".
+            format(name)).failed is True:
+        return False
 
-def configure_nginx():
-    """
-    One-time setup: add /hbnb_static/ location to Nginx config if not present
-    """
-    location_block = """
-    location /hbnb_static/ {
-        alias /data/web_static/current/;
-        index index.html;
-        try_files $uri $uri/ =404;
-    }
-    """
-
-    # Check if /hbnb_static is already configured
-    result = run("grep '/hbnb_static/' /etc/nginx/sites-available/default", warn_only=True)
-
-    if result.failed:
-        # Add location block right after 'server_name _;'
-        escaped_block = location_block.replace('\n', '\\n').replace('"', '\\"')
-        run(f'sudo sed -i "/server_name _;/a {escaped_block}" /etc/nginx/sites-available/default')
-        run("sudo service nginx restart")
+    if run("rm -rf /data/web_static/current").failed is True:
+        return False
+    if run("ln -s /data/web_static/releases/{} /data/web_static/current".
+            format(name)).failed is True:
+        return False
+    return True
