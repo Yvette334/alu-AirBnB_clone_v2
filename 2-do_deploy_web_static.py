@@ -1,46 +1,55 @@
 #!/usr/bin/python3
-""" Function that compress a folder """
-from datetime import datetime
-from fabric.api import *
-import shlex
-import os
+"""
+Fabric script to deploy web_static and configure Nginx
+"""
 
+from fabric.api import *
+from os.path import exists
+import os
 
 env.hosts = ["54.175.105.22", "54.175.110.39"]
 env.user = "ubuntu"
 
-
 def do_deploy(archive_path):
-    """ Deploys """
-    if not os.path.exists(archive_path):
+    """
+    Deploys archive and configures Nginx
+    """
+    if not exists(archive_path):
         return False
+
     try:
-        name = archive_path.replace('/', ' ')
-        name = shlex.split(name)
-        name = name[-1]
+        # File and directory setup
+        filename = os.path.basename(archive_path)
+        dirname = filename.split('.')[0]
+        releases_path = f"/data/web_static/releases/{dirname}"
+        tmp_path = f"/tmp/{filename}"
 
-        wname = name.replace('.', ' ')
-        wname = shlex.split(wname)
-        wname = wname[0]
-
-        releases_path = "/data/web_static/releases/{}/".format(wname)
-        tmp_path = "/tmp/{}".format(name)
-
+        # Upload and extract
         put(archive_path, "/tmp/")
-        run("mkdir -p {}".format(releases_path))
-        run("tar -xzf {} -C {}".format(tmp_path, releases_path))
-        run("rm {}".format(tmp_path))
-        run("mv {}web_static/* {}".format(releases_path, releases_path))
-        run("rm -rf {}web_static".format(releases_path))
+        run(f"mkdir -p {releases_path}")
+        run(f"tar -xzf {tmp_path} -C {releases_path}")
+        run(f"rm {tmp_path}")
+        run(f"mv {releases_path}/web_static/* {releases_path}")
+        run(f"rm -rf {releases_path}/web_static")
+
+        # Link management
         run("rm -rf /data/web_static/current")
-        run("ln -s {} /data/web_static/current".format(releases_path))
-        
-        # Additional step to ensure hbnb_static is properly linked
-        run("mkdir -p /data/web_static/current/hbnb_static")
-        run("ln -sf {}* /data/web_static/current/hbnb_static/".format(releases_path))
-        
+        run(f"ln -s {releases_path} /data/web_static/current")
+
+        # Nginx configuration
+        nginx_conf = """
+        location /hbnb_static/ {
+            alias /data/web_static/current/;
+            index index.html;
+            try_files $uri $uri/ =404;
+        }
+        """
+        run(f"sudo sed -i '/server_name _;/a {nginx_conf}' /etc/nginx/sites-available/default")
+        run("sudo service nginx restart")
+
         print("New version deployed!")
         return True
+
     except Exception as e:
-        print("Error during deployment:", str(e))
+        print(f"Deployment failed: {str(e)}")
         return False
